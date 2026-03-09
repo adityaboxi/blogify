@@ -1,36 +1,89 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = async () => {
-    await logout();
-    navigate("/");
+    try {
+      await logout();
+      navigate("/");
+    } catch {
+      // logout should never fail but just in case
+      navigate("/");
+    }
   };
+
+  const isActive = (path) => location.pathname === path;
 
   return (
     <nav style={{
-      display: "flex", justifyContent: "space-between", alignItems: "center",
-      padding: "1rem 2rem", borderBottom: "1px solid #e5e5e5",
-      position: "sticky", top: 0, background: "#fff", zIndex: 100,
+      background: "#fff",
+      borderBottom: "2px solid #e63946",
+      padding: "0 1.5rem",
+      height: "60px",
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      position: "sticky", top: 0, zIndex: 100,
+      boxShadow: "0 2px 12px rgba(230,57,70,0.08)"
     }}>
-      <Link to="/" style={{ fontSize: "1.3rem", fontWeight: "700", color: "#111", fontFamily: "Georgia, serif" }}>
-        Blogify
+      {/* Logo */}
+      <Link to="/" style={{ textDecoration: "none" }}>
+        <span style={{
+          fontFamily: "Georgia, serif", fontSize: "1.5rem",
+          fontWeight: "700", color: "#e63946", letterSpacing: "-0.5px"
+        }}>
+          Blogify
+        </span>
       </Link>
-      <div style={{ display: "flex", gap: "1.2rem", alignItems: "center" }}>
-        <Link to="/" style={link}>Home</Link>
+
+      {/* Nav links */}
+      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+        <NavLink to="/" active={isActive("/")}>Home</NavLink>
+
         {user ? (
           <>
-            <Link to="/blog/add" style={link}>Write</Link>
-            <span style={{ color: "#666", fontSize: "0.9rem" }}>{user.fullName}</span>
-            <button onClick={handleLogout} style={btn}>Logout</button>
+            <NavLink to="/add-blog" active={isActive("/add-blog")}>Write</NavLink>
+            <span style={{
+              fontSize: "0.875rem", color: "#666",
+              padding: "0 0.5rem", maxWidth: "120px",
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"
+            }}>
+              {user.fullName?.split(" ")[0] || "User"}
+            </span>
+            <button
+              onClick={handleLogout}
+              style={{
+                padding: "0.4rem 1rem",
+                background: "#e63946", color: "#fff",
+                border: "none", borderRadius: "6px",
+                fontSize: "0.875rem", fontWeight: "600",
+                cursor: "pointer", transition: "background 0.2s"
+              }}
+              onMouseEnter={e => e.target.style.background = "#c1121f"}
+              onMouseLeave={e => e.target.style.background = "#e63946"}
+            >
+              Logout
+            </button>
           </>
         ) : (
           <>
-            <Link to="/signin" style={link}>Sign In</Link>
-            <Link to="/signup" style={{ ...btn, textDecoration: "none" }}>Sign Up</Link>
+            <NavLink to="/signin" active={isActive("/signin")}>Sign In</NavLink>
+            <button
+              onClick={() => navigate("/signup")}
+              style={{
+                padding: "0.4rem 1rem",
+                background: "#e63946", color: "#fff",
+                border: "none", borderRadius: "6px",
+                fontSize: "0.875rem", fontWeight: "600",
+                cursor: "pointer", transition: "background 0.2s"
+              }}
+              onMouseEnter={e => e.target.style.background = "#c1121f"}
+              onMouseLeave={e => e.target.style.background = "#e63946"}
+            >
+              Sign Up
+            </button>
           </>
         )}
       </div>
@@ -38,8 +91,21 @@ export default function Navbar() {
   );
 }
 
-const link = { color: "#555", fontSize: "0.95rem", transition: "color 0.2s" };
-const btn = {
-  background: "#111", color: "#fff", border: "none",
-  padding: "0.4rem 1rem", borderRadius: "6px", fontSize: "0.9rem",
-};
+function NavLink({ to, active, children }) {
+  return (
+    <Link
+      to={to}
+      style={{
+        textDecoration: "none",
+        padding: "0.4rem 0.75rem",
+        fontSize: "0.9rem",
+        color: active ? "#e63946" : "#555",
+        fontWeight: active ? "600" : "400",
+        borderBottom: active ? "2px solid #e63946" : "2px solid transparent",
+        transition: "color 0.2s",
+      }}
+    >
+      {children}
+    </Link>
+  );
+}

@@ -26,10 +26,41 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: { fileSize: 5 * 1024 * 1024 },
 });
 
-// Get all blogs
+// ✅ NEW — Stream all blogs using NDJSON
+router.get("/stream", async (req, res) => {
+  try {
+    res.setHeader("Content-Type", "application/x-ndjson");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("X-Accel-Buffering", "no");
+
+    const cursor = Blog.find()
+      .populate("createdBy", "fullName")
+      .sort({ createdAt: -1 })
+      .cursor();
+
+    cursor.on("data", (blog) => {
+      res.write(JSON.stringify(blog) + "\n");
+    });
+
+    cursor.on("end", () => {
+      res.end();
+    });
+
+    cursor.on("error", (err) => {
+      console.error("Stream error:", err);
+      res.end();
+    });
+
+  } catch (err) {
+    console.error("Stream setup error:", err);
+    res.status(500).end();
+  }
+});
+
+// Get all blogs (keep as fallback)
 router.get("/", async (req, res) => {
   try {
     const blogs = await Blog.find()

@@ -1,0 +1,11 @@
+client/node_modules
+server/node_modules
+client/.env
+server/.env
+client/dist
+server/public/uploads
+.DS_Store
+Thumbs.db
+package-lock.json
+server/package-lock.json
+client/package-lock.json

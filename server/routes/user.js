@@ -5,14 +5,6 @@ const { sendOTPEmail } = require("../services/email");
 
 const router = Router();
 
-const COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: true,
-  sameSite: "none",
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-  path: "/",
-};
-
 // Get current user
 router.get("/me", (req, res) => {
   if (!req.user) return res.json({ user: null });
@@ -36,14 +28,14 @@ router.post("/signup", async (req, res) => {
   }
 });
 
-// Sign In
+// Sign In — return token in body
 router.post("/signin", async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password)
     return res.status(400).json({ error: "Email and password are required." });
   try {
     const token = await User.matchPasswordAndGenerateToken(email, password);
-    return res.cookie("token", token, COOKIE_OPTIONS).json({ success: true });
+    return res.json({ success: true, token });
   } catch {
     return res.status(401).json({ error: "Invalid email or password." });
   }
@@ -51,7 +43,7 @@ router.post("/signin", async (req, res) => {
 
 // Logout
 router.get("/logout", (req, res) => {
-  res.clearCookie("token", COOKIE_OPTIONS).json({ success: true });
+  return res.json({ success: true });
 });
 
 // Forgot Password — Send OTP
@@ -62,12 +54,10 @@ router.post("/forgot-password", async (req, res) => {
     const user = await User.findOne({ email });
     if (!user)
       return res.status(404).json({ error: "No account found with that email." });
-
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    // Hash OTP before storing
     const hashedOTP = await bcrypt.hash(otp, 10);
     user.resetOTP = hashedOTP;
-    user.resetOTPExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+    user.resetOTPExpiry = new Date(Date.now() + 10 * 60 * 1000);
     await user.save({ validateBeforeSave: false });
     await sendOTPEmail(email, otp);
     return res.json({ success: true });
@@ -105,7 +95,6 @@ router.post("/reset-password", async (req, res) => {
       return res.status(400).json({ error: "OTP expired." });
     const isValid = await bcrypt.compare(otp, user.resetOTP);
     if (!isValid) return res.status(400).json({ error: "Invalid OTP." });
-
     user.password = newPassword;
     user.resetOTP = undefined;
     user.resetOTPExpiry = undefined;

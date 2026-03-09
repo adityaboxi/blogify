@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const cloudinary = require("cloudinary").v2;
+const cloudinary = require("cloudinary");
 const multer = require("multer");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const Blog = require("../models/blog");
@@ -7,7 +7,7 @@ const { restrictToLoggedInUsersOnly } = require("../middlewares/authentication")
 
 const router = Router();
 
-// Configure Cloudinary
+// Configure Cloudinary v1
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -29,7 +29,7 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 
-// ✅ NEW — Stream all blogs using NDJSON
+// Stream all blogs
 router.get("/stream", async (req, res) => {
   try {
     res.setHeader("Content-Type", "application/x-ndjson");
@@ -60,7 +60,7 @@ router.get("/stream", async (req, res) => {
   }
 });
 
-// Get all blogs (keep as fallback)
+// Get all blogs
 router.get("/", async (req, res) => {
   try {
     const blogs = await Blog.find()
@@ -83,7 +83,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// Create blog (auth required)
+// Create blog
 router.post(
   "/",
   restrictToLoggedInUsersOnly,
@@ -106,7 +106,7 @@ router.post(
   }
 );
 
-// Delete blog (only owner)
+// Delete blog
 router.delete("/:id", restrictToLoggedInUsersOnly, async (req, res) => {
   try {
     const blog = await Blog.findById(req.params.id);
